@@ -13,7 +13,6 @@ require "patch"
 require "compilers"
 require "os/mac/version"
 require "extend/on_os"
-require "bintray"
 
 class SoftwareSpec
   extend T::Sig
@@ -300,14 +299,19 @@ class Bottle
   def_delegators :resource, :url, :verify_download_integrity
   def_delegators :resource, :cached_download
 
-  def initialize(formula, spec)
+  def initialize(formula, spec, tag = nil)
     @name = formula.name
     @resource = Resource.new
     @resource.owner = formula
     @resource.specs[:bottle] = true
     @spec = spec
 
-    checksum, tag, cellar = spec.checksum_for(Utils::Bottles.tag)
+    bottle_tag = if tag.present?
+      Utils::Bottles::Tag.from_symbol(tag)
+    else
+      Utils::Bottles.tag
+    end
+    checksum, tag, cellar = spec.checksum_for(bottle_tag)
 
     @prefix = spec.prefix
     @tag = tag
@@ -348,8 +352,20 @@ class Bottle
   end
 
   def fetch_tab
+    return if github_packages_manifest_resource.blank?
+
     # a checksum is used later identifying the correct tab but we do not have the checksum for the manifest/tab
-    github_packages_manifest_resource&.fetch(verify_download_integrity: false)
+    github_packages_manifest_resource.fetch(verify_download_integrity: false)
+
+    begin
+      JSON.parse(github_packages_manifest_resource.cached_download.read)
+    rescue JSON::ParserError
+      raise DownloadError.new(
+        github_packages_manifest_resource,
+        RuntimeError.new("The downloaded GitHub Packages manifest was corrupted or modified (it is not valid JSON):"\
+                         "\n#{github_packages_manifest_resource.cached_download}"),
+      )
+    end
   rescue DownloadError
     raise unless fallback_on_error
 
@@ -364,7 +380,8 @@ class Bottle
     json = begin
       JSON.parse(manifest_json)
     rescue JSON::ParserError
-      raise ArgumentError, "Couldn't parse manifest JSON."
+      raise "The downloaded GitHub Packages manifest was corrupted or modified (it is not valid JSON): "\
+            "\n#{github_packages_manifest_resource.cached_download}"
     end
 
     manifests = json["manifests"]
@@ -374,8 +391,11 @@ class Bottle
     raise ArgumentError, "Missing 'annotations' section." if manifests_annotations.blank?
 
     bottle_digest = @resource.checksum.hexdigest
+    image_ref = GitHubPackages.version_rebuild(@resource.version, rebuild, @tag.to_s)
     manifest_annotations = manifests_annotations.find do |m|
-      m["sh.brew.bottle.digest"] == bottle_digest
+      next if m["sh.brew.bottle.digest"] != bottle_digest
+
+      m["org.opencontainers.image.ref.name"] == image_ref
     end
     raise ArgumentError, "Couldn't find manifest matching bottle checksum." if manifest_annotations.blank?
 
@@ -461,8 +481,6 @@ class BottleSpecification
     if var.nil?
       @root_url ||= if (github_packages_url = GitHubPackages.root_url_if_match(Homebrew::EnvConfig.bottle_domain))
         github_packages_url
-      elsif Homebrew::EnvConfig.bottle_domain.match?(::Bintray::URL_REGEX)
-        "#{Homebrew::EnvConfig.bottle_domain}/#{Utils::Bottles::Bintray.repository(tap)}"
       else
         Homebrew::EnvConfig.bottle_domain
       end
@@ -478,7 +496,7 @@ class BottleSpecification
 
   def cellar(val = nil)
     if val.present?
-      odeprecated(
+      odisabled(
         "`cellar` in a bottle block",
         "`brew style --fix` on the formula to update the style or use `sha256` with a `cellar:` argument",
       )
@@ -539,7 +557,7 @@ class BottleSpecification
       end
 
       if digest && tag
-        odeprecated(
+        odisabled(
           '`sha256 "digest" => :tag` in a bottle block',
           '`brew style --fix` on the formula to update the style or use `sha256 tag: "digest"`',
         )

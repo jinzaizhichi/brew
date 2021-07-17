@@ -317,7 +317,7 @@ module Homebrew
           next
         end
 
-        # If we've specifed --prune don't do the (expensive) .stale? check.
+        # If we've specified --prune don't do the (expensive) .stale? check.
         cleanup_path(path) { path.unlink } if !prune? && path.stale?(scrub: scrub?)
       end
 
@@ -435,7 +435,12 @@ module Homebrew
       ]
       dirs.select(&:directory?)
           .flat_map { |d| Pathname.glob("#{d}/**/.DS_Store") }
-          .each(&:unlink)
+          .each do |dir|
+            dir.unlink
+          rescue Errno::EACCES
+            # don't care if we can't delete a .DS_Store
+            nil
+          end
     end
 
     def prune_prefix_symlinks_and_directories

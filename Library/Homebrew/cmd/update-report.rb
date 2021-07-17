@@ -102,6 +102,7 @@ module Homebrew
     updated_taps = []
     Tap.each do |tap|
       next unless tap.git?
+      next if tap.core_tap? && ENV["HOMEBREW_JSON_CORE"].present? && args.preinstall?
 
       begin
         reporter = Reporter.new(tap)
@@ -169,7 +170,7 @@ module Homebrew
     link_completions_manpages_and_docs
     Tap.each(&:link_completions_and_manpages)
 
-    failed_fetch_dirs = ENV["HOMEBREW_FAILED_FETCH_DIRS"]&.split("\n")
+    failed_fetch_dirs = ENV["HOMEBREW_MISSING_REMOTE_REF_DIRS"]&.split("\n")
     if failed_fetch_dirs.present?
       failed_fetch_taps = failed_fetch_dirs.map { |dir| Tap.from_path(dir) }
 
@@ -207,6 +208,7 @@ module Homebrew
 
   def install_core_tap_if_necessary
     return if ENV["HOMEBREW_UPDATE_TEST"]
+    return if ENV["HOMEBREW_JSON_CORE"].present?
 
     core_tap = CoreTap.instance
     return if core_tap.installed?

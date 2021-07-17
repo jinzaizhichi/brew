@@ -127,7 +127,7 @@ class ActiveSupport::Cache::FileStore
   include ::ActiveSupport::Cache::Strategy::LocalCache
   def cache_path(); end
 
-  def initialize(cache_path, options=T.unsafe(nil)); end
+  def initialize(cache_path, **options); end
   DIR_FORMATTER = ::T.let(nil, ::T.untyped)
   FILENAME_MAX_SIZE = ::T.let(nil, ::T.untyped)
   FILEPATH_MAX_SIZE = ::T.let(nil, ::T.untyped)
@@ -482,6 +482,36 @@ module ActiveSupport::Concern
   def self.extended(base); end
 end
 
+module ActiveSupport::Concurrency
+end
+
+class ActiveSupport::Concurrency::ShareLock
+  include ::MonitorMixin
+  def exclusive(purpose: T.unsafe(nil), compatible: T.unsafe(nil), after_compatible: T.unsafe(nil), no_wait: T.unsafe(nil)); end
+
+  def initialize(); end
+
+  def raw_state(); end
+
+  def sharing(); end
+
+  def start_exclusive(purpose: T.unsafe(nil), compatible: T.unsafe(nil), no_wait: T.unsafe(nil)); end
+
+  def start_sharing(); end
+
+  def stop_exclusive(compatible: T.unsafe(nil)); end
+
+  def stop_sharing(); end
+
+  def yield_shares(purpose: T.unsafe(nil), compatible: T.unsafe(nil), block_share: T.unsafe(nil)); end
+end
+
+class ActiveSupport::Concurrency::ShareLock
+end
+
+module ActiveSupport::Concurrency
+end
+
 module ActiveSupport::Configurable
   def config(); end
 end
@@ -532,6 +562,14 @@ class ActiveSupport::CurrentAttributes
   def _reset_callbacks(); end
 
   def _run_reset_callbacks(&block); end
+
+  def attributes(); end
+
+  def attributes=(attributes); end
+
+  def reset(); end
+
+  def set(set_attributes); end
 end
 
 class ActiveSupport::CurrentAttributes
@@ -553,9 +591,17 @@ class ActiveSupport::CurrentAttributes
 
   def self.before_reset(&block); end
 
+  def self.clear_all(); end
+
   def self.instance(); end
 
+  def self.reset(*args, &block); end
+
+  def self.reset_all(); end
+
   def self.resets(&block); end
+
+  def self.set(*args, &block); end
 end
 
 module ActiveSupport::Dependencies
@@ -2694,8 +2740,6 @@ class Addressable::Template
 
   def extract(uri, processor=T.unsafe(nil)); end
 
-  def generate(params=T.unsafe(nil), recall=T.unsafe(nil), options=T.unsafe(nil)); end
-
   def initialize(pattern); end
 
   def keys(); end
@@ -2891,11 +2935,6 @@ class Binding
   def clone(); end
 
   def irb(); end
-end
-
-class Bintray
-  extend ::T::Private::Methods::MethodHooks
-  extend ::T::Private::Methods::SingletonMethodHooks
 end
 
 module Bootsnap
@@ -3176,6 +3215,11 @@ module Bootsnap
   def self.logger=(logger); end
 
   def self.setup(cache_dir:, development_mode: T.unsafe(nil), load_path_cache: T.unsafe(nil), autoload_paths_cache: T.unsafe(nil), disable_trace: T.unsafe(nil), compile_cache_iseq: T.unsafe(nil), compile_cache_yaml: T.unsafe(nil)); end
+end
+
+module BottleAPI
+  extend ::T::Private::Methods::MethodHooks
+  extend ::T::Private::Methods::SingletonMethodHooks
 end
 
 class BottleSpecification
@@ -6218,14 +6262,6 @@ class CompilerSelector
   extend ::T::Private::Methods::SingletonMethodHooks
 end
 
-class Concurrent::Promises::AbstractEventFuture
-  include ::Concurrent::Promises::InternalStates
-end
-
-module Concurrent::Promises::Resolvable
-  include ::Concurrent::Promises::InternalStates
-end
-
 class Concurrent::RubyThreadPoolExecutor
   DEFAULT_SYNCHRONOUS = ::T.let(nil, ::T.untyped)
 end
@@ -6245,10 +6281,6 @@ end
 module CopHelper
   extend ::RSpec::Core::SharedContext
   extend ::RSpec::Its
-end
-
-class CurlDownloadStrategy
-  include ::AbstractDownloadStrategy::Compat_Fetch
 end
 
 class CxxStdlib
@@ -6712,6 +6744,143 @@ class DevelopmentTools
   extend ::T::Private::Methods::SingletonMethodHooks
 end
 
+class DidYouMean::ClassNameChecker
+  def class_name(); end
+
+  def class_names(); end
+
+  def corrections(); end
+
+  def initialize(exception); end
+
+  def scopes(); end
+end
+
+module DidYouMean::Correctable
+  def corrections(); end
+
+  def original_message(); end
+
+  def spell_checker(); end
+
+  def to_s(); end
+end
+
+module DidYouMean::Jaro
+  def self.distance(str1, str2); end
+end
+
+module DidYouMean::JaroWinkler
+  def self.distance(str1, str2); end
+end
+
+class DidYouMean::KeyErrorChecker
+  def corrections(); end
+
+  def initialize(key_error); end
+end
+
+class DidYouMean::KeyErrorChecker
+end
+
+module DidYouMean::Levenshtein
+  def self.distance(str1, str2); end
+
+  def self.min3(a, b, c); end
+end
+
+class DidYouMean::MethodNameChecker
+  def corrections(); end
+
+  def initialize(exception); end
+
+  def method_name(); end
+
+  def method_names(); end
+
+  def names_to_exclude(); end
+
+  def receiver(); end
+  RB_RESERVED_WORDS = ::T.let(nil, ::T.untyped)
+end
+
+class DidYouMean::NullChecker
+  def corrections(); end
+
+  def initialize(*_); end
+end
+
+class DidYouMean::PlainFormatter
+  def message_for(corrections); end
+end
+
+class DidYouMean::PlainFormatter
+end
+
+class DidYouMean::RequirePathChecker
+  def corrections(); end
+
+  def initialize(exception); end
+
+  def path(); end
+end
+
+class DidYouMean::RequirePathChecker
+  def self.requireables(); end
+end
+
+class DidYouMean::TreeSpellChecker
+  def augment(); end
+
+  def correct(input); end
+
+  def dictionary(); end
+
+  def dictionary_without_leaves(); end
+
+  def dimensions(); end
+
+  def find_leaves(path); end
+
+  def initialize(dictionary:, separator: T.unsafe(nil), augment: T.unsafe(nil)); end
+
+  def plausible_dimensions(input); end
+
+  def possible_paths(states); end
+
+  def separator(); end
+
+  def tree_depth(); end
+end
+
+class DidYouMean::TreeSpellChecker
+end
+
+class DidYouMean::VariableNameChecker
+  def corrections(); end
+
+  def cvar_names(); end
+
+  def initialize(exception); end
+
+  def ivar_names(); end
+
+  def lvar_names(); end
+
+  def method_names(); end
+
+  def name(); end
+  RB_RESERVED_WORDS = ::T.let(nil, ::T.untyped)
+end
+
+module DidYouMean
+  def self.correct_error(error_class, spell_checker); end
+
+  def self.formatter(); end
+
+  def self.formatter=(formatter); end
+end
+
 class Dir
   def children(); end
 
@@ -7002,11 +7171,6 @@ class Enumerator::Generator
   def each(*_, &blk); end
 
   def initialize(*_); end
-end
-
-module EnvVar
-  extend ::T::Private::Methods::MethodHooks
-  extend ::T::Private::Methods::SingletonMethodHooks
 end
 
 class Errno::EAUTH
@@ -8161,10 +8325,6 @@ module Homebrew::EnvConfig
 
   def self.bat_config_path(); end
 
-  def self.bintray_key(); end
-
-  def self.bintray_user(); end
-
   def self.bootsnap?(); end
 
   def self.bottle_domain(); end
@@ -8254,6 +8414,8 @@ module Homebrew::EnvConfig
   def self.no_insecure_redirect?(); end
 
   def self.no_install_cleanup?(); end
+
+  def self.no_install_upgrade?(); end
 
   def self.no_installed_dependents_check?(); end
 
@@ -8405,11 +8567,6 @@ module Homebrew::Livecheck::Strategy
 end
 
 class Homebrew::Service
-  extend ::T::Private::Methods::MethodHooks
-  extend ::T::Private::Methods::SingletonMethodHooks
-end
-
-module Homebrew::Settings
   extend ::T::Private::Methods::MethodHooks
   extend ::T::Private::Methods::SingletonMethodHooks
 end
@@ -9684,6 +9841,8 @@ module IRB
 
   def self.load_modules(); end
 
+  def self.parse_opts(argv: T.unsafe(nil)); end
+
   def self.rc_file(ext=T.unsafe(nil)); end
 
   def self.rc_file_generators(); end
@@ -9724,9 +9883,8 @@ class Keg::DirectoryNotWritableError
 end
 
 class Keg::Relocation
-  def self.[](*_); end
-
-  def self.members(); end
+  extend ::T::Private::Methods::MethodHooks
+  extend ::T::Private::Methods::SingletonMethodHooks
 end
 
 class Keg
@@ -9765,6 +9923,10 @@ module Kernel
   def self.load(*_); end
 
   def self.require(path); end
+end
+
+class KeyError
+  include ::DidYouMean::Correctable
 end
 
 module Language::Node
@@ -11278,79 +11440,6 @@ class Migrator
   extend ::T::Private::Methods::SingletonMethodHooks
 end
 
-class MiniPortile
-  def activate(); end
-
-  def apply_patch(patch_file); end
-
-  def compile(); end
-
-  def configure(); end
-
-  def configure_options(); end
-
-  def configure_options=(configure_options); end
-
-  def configured?(); end
-
-  def cook(); end
-
-  def download(); end
-
-  def downloaded?(); end
-
-  def extract(); end
-
-  def files(); end
-
-  def files=(files); end
-
-  def host(); end
-
-  def host=(host); end
-
-  def initialize(name, version); end
-
-  def install(); end
-
-  def installed?(); end
-
-  def logger(); end
-
-  def logger=(logger); end
-
-  def name(); end
-
-  def original_host(); end
-
-  def patch(); end
-
-  def patch_files(); end
-
-  def patch_files=(patch_files); end
-
-  def path(); end
-
-  def target(); end
-
-  def target=(target); end
-
-  def version(); end
-  KEYRING_NAME = ::T.let(nil, ::T.untyped)
-  TAR_EXECUTABLES = ::T.let(nil, ::T.untyped)
-  VERSION = ::T.let(nil, ::T.untyped)
-end
-
-class MiniPortile
-  def self.windows?(); end
-end
-
-class MiniPortileCMake
-end
-
-class MiniPortileCMake
-end
-
 MiniTest = Minitest
 
 module Minitest
@@ -12413,6 +12502,8 @@ end
 class Net::HTTPAlreadyReported
 end
 
+Net::HTTPClientError::EXCEPTION_TYPE = Net::HTTPServerException
+
 Net::HTTPClientErrorCode = Net::HTTPClientError
 
 class Net::HTTPEarlyHints
@@ -12424,13 +12515,9 @@ end
 
 Net::HTTPFatalErrorCode = Net::HTTPClientError
 
-class Net::HTTPInformation
-end
+Net::HTTPInformation::EXCEPTION_TYPE = Net::HTTPError
 
-Net::HTTPInformationCode::EXCEPTION_TYPE = Net::HTTPError
-
-class Net::HTTPInformation
-end
+Net::HTTPInformationCode = Net::HTTPInformation
 
 class Net::HTTPLoopDetected
   HAS_BODY = ::T.let(nil, ::T.untyped)
@@ -12478,6 +12565,8 @@ end
 class Net::HTTPRangeNotSatisfiable
 end
 
+Net::HTTPRedirection::EXCEPTION_TYPE = Net::HTTPRetriableError
+
 Net::HTTPRedirectionCode = Net::HTTPRedirection
 
 Net::HTTPRequestURITooLarge = Net::HTTPURITooLong
@@ -12486,17 +12575,15 @@ Net::HTTPResponceReceiver = Net::HTTPResponse
 
 Net::HTTPRetriableCode = Net::HTTPRedirection
 
+Net::HTTPServerError::EXCEPTION_TYPE = Net::HTTPFatalError
+
 Net::HTTPServerErrorCode = Net::HTTPServerError
 
 Net::HTTPSession = Net::HTTP
 
-class Net::HTTPSuccess
-end
+Net::HTTPSuccess::EXCEPTION_TYPE = Net::HTTPError
 
-Net::HTTPSuccessCode::EXCEPTION_TYPE = Net::HTTPError
-
-class Net::HTTPSuccess
-end
+Net::HTTPSuccessCode = Net::HTTPSuccess
 
 class Net::HTTPURITooLong
   HAS_BODY = ::T.let(nil, ::T.untyped)
@@ -12646,11 +12733,11 @@ module OS
 end
 
 class Object
-  include ::Minitest::Expectations
-  include ::ActiveSupport::Tryable
-  include ::SystemCommand::Mixin
-  include ::Utils::Curl
   include ::ActiveSupport::Dependencies::Loadable
+  include ::ActiveSupport::Tryable
+  include ::Minitest::Expectations
+  include ::Utils::Curl
+  include ::SystemCommand::Mixin
   include ::ActiveSupport::ForkTracker::CoreExtPrivate
   include ::ActiveSupport::ForkTracker::CoreExt
   def acts_like?(duck); end
@@ -12674,6 +12761,7 @@ class Object
   DEPRECATED_OFFICIAL_TAPS = ::T.let(nil, ::T.untyped)
   ENV = ::T.let(nil, ::T.untyped)
   FORMULA_COMPONENT_PRECEDENCE_LIST = ::T.let(nil, ::T.untyped)
+  HIDDEN_DESC_PLACEHOLDER = ::T.let(nil, ::T.untyped)
   HOMEBREW_BOTTLES_EXTNAME_REGEX = ::T.let(nil, ::T.untyped)
   HOMEBREW_BOTTLE_DEFAULT_DOMAIN = ::T.let(nil, ::T.untyped)
   HOMEBREW_BREW_DEFAULT_GIT_REMOTE = ::T.let(nil, ::T.untyped)
@@ -12822,6 +12910,31 @@ module OpenSSL::SSL
   TLS1_VERSION = ::T.let(nil, ::T.untyped)
 end
 
+class OpenSSL::SSL::SSLContext
+  def add_certificate(*_); end
+
+  def alpn_protocols(); end
+
+  def alpn_protocols=(alpn_protocols); end
+
+  def alpn_select_cb(); end
+
+  def alpn_select_cb=(alpn_select_cb); end
+
+  def enable_fallback_scsv(); end
+
+  def max_version=(version); end
+
+  def min_version=(version); end
+  DEFAULT_TMP_DH_CALLBACK = ::T.let(nil, ::T.untyped)
+end
+
+class OpenSSL::SSL::SSLSocket
+  def alpn_protocol(); end
+
+  def tmp_key(); end
+end
+
 module OpenSSL::X509
   V_FLAG_NO_CHECK_TIME = ::T.let(nil, ::T.untyped)
   V_FLAG_TRUSTED_FIRST = ::T.let(nil, ::T.untyped)
@@ -12855,58 +12968,6 @@ end
 
 module OpenSSL
   def self.fips_mode(); end
-end
-
-class OpenURI::Buffer
-  def <<(str); end
-
-  def io(); end
-
-  def size(); end
-  StringMax = ::T.let(nil, ::T.untyped)
-end
-
-class OpenURI::Buffer
-end
-
-class OpenURI::HTTPError
-  def initialize(message, io); end
-end
-
-class OpenURI::HTTPRedirect
-  def initialize(message, io, uri); end
-end
-
-module OpenURI::Meta
-  def content_type_parse(); end
-
-  def meta_add_field(name, value); end
-
-  def meta_add_field2(name, values); end
-
-  def meta_setup_encoding(); end
-  RE_LWS = ::T.let(nil, ::T.untyped)
-  RE_PARAMETERS = ::T.let(nil, ::T.untyped)
-  RE_QUOTED_STRING = ::T.let(nil, ::T.untyped)
-  RE_TOKEN = ::T.let(nil, ::T.untyped)
-end
-
-module OpenURI::Meta
-  def self.init(obj, src=T.unsafe(nil)); end
-end
-
-module OpenURI
-  def self.check_options(options); end
-
-  def self.open_http(buf, target, proxy, options); end
-
-  def self.open_loop(uri, options); end
-
-  def self.open_uri(name, *rest); end
-
-  def self.redirectable?(uri1, uri2); end
-
-  def self.scan_open_optional_arguments(*rest); end
 end
 
 class Option
@@ -13104,10 +13165,6 @@ class Parlour::TypedObject
   extend ::T::InterfaceWrapper::Helpers
   extend ::T::Private::Methods::MethodHooks
   extend ::T::Private::Methods::SingletonMethodHooks
-end
-
-module Parlour::Types
-  TypeLike = ::T.let(nil, ::T.untyped)
 end
 
 class Parlour::Types::Proc::Parameter
@@ -19003,6 +19060,8 @@ module RSpec::Core::HashImitatable
 
   def any?(*args, &block); end
 
+  def assert_valid_keys(*args, &block); end
+
   def assoc(*args, &block); end
 
   def chain(*args, &block); end
@@ -19036,6 +19095,18 @@ module RSpec::Core::HashImitatable
   def deep_merge(*args, &block); end
 
   def deep_merge!(*args, &block); end
+
+  def deep_stringify_keys(*args, &block); end
+
+  def deep_stringify_keys!(*args, &block); end
+
+  def deep_symbolize_keys(*args, &block); end
+
+  def deep_symbolize_keys!(*args, &block); end
+
+  def deep_transform_keys(*args, &block); end
+
+  def deep_transform_keys!(*args, &block); end
 
   def default(*args, &block); end
 
@@ -19219,7 +19290,15 @@ module RSpec::Core::HashImitatable
 
   def store(*args, &block); end
 
+  def stringify_keys(*args, &block); end
+
+  def stringify_keys!(*args, &block); end
+
   def sum(*args, &block); end
+
+  def symbolize_keys(*args, &block); end
+
+  def symbolize_keys!(*args, &block); end
 
   def take(*args, &block); end
 
@@ -19232,6 +19311,10 @@ module RSpec::Core::HashImitatable
   def to_hash(*args, &block); end
 
   def to_msgpack(*args, &block); end
+
+  def to_options(*args, &block); end
+
+  def to_options!(*args, &block); end
 
   def to_plist(*args, &block); end
 
@@ -24605,6 +24688,21 @@ module RSpec
   def self.xdescribe(*args, &example_group_block); end
 end
 
+class RSpecJUnitFormatter
+  def dump_summary(notification); end
+
+  def stop(notification); end
+  DISCOURAGED_REGEXP = ::T.let(nil, ::T.untyped)
+  DISCOURAGED_REPLACEMENTS = ::T.let(nil, ::T.untyped)
+  ILLEGAL_REGEXP = ::T.let(nil, ::T.untyped)
+  ILLEGAL_REPLACEMENT = ::T.let(nil, ::T.untyped)
+  STRIP_DIFF_COLORS_BLOCK_REGEXP = ::T.let(nil, ::T.untyped)
+  STRIP_DIFF_COLORS_CODES_REGEXP = ::T.let(nil, ::T.untyped)
+end
+
+class RSpecJUnitFormatter
+end
+
 module Racc
   Racc_No_Extensions = ::T.let(nil, ::T.untyped)
 end
@@ -26740,6 +26838,8 @@ module Ronn
   def self.version(); end
 end
 
+RspecJunitFormatter = RSpecJUnitFormatter
+
 module RuboCop::AST::CollectionNode
   def compact_blank(*args, &block); end
 
@@ -26763,7 +26863,15 @@ module RuboCop::AST::CollectionNode
 
   def pluck(*args, &block); end
 
+  def to_default_s(*args, &block); end
+
+  def to_formatted_s(*args, &block); end
+
   def to_msgpack(*args, &block); end
+
+  def to_sentence(*args, &block); end
+
+  def to_xml(*args, &block); end
 
   def without(*args, &block); end
 end
@@ -29542,7 +29650,7 @@ end
 class Time
   def self.===(other); end
 
-  def self.at_with_coercion(*args, **kwargs); end
+  def self.at_with_coercion(*args); end
 
   def self.at_without_coercion(*_); end
 
@@ -29624,35 +29732,12 @@ module Tty
   def self.yellow(); end
 end
 
-module URI
-  include ::URI::RFC2396_REGEXP
-end
-
-class URI::FTP
-  def buffer_open(buf, proxy, options); end
-end
-
 class URI::FTP
   def self.new2(user, password, host, port, path, typecode=T.unsafe(nil), arg_check=T.unsafe(nil)); end
 end
 
 class URI::File
-  def check_password(user); end
-
-  def check_user(user); end
-
-  def check_userinfo(user); end
-
-  def set_userinfo(v); end
-  COMPONENT = ::T.let(nil, ::T.untyped)
   DEFAULT_PORT = ::T.let(nil, ::T.untyped)
-end
-
-class URI::File
-end
-
-class URI::HTTP
-  def buffer_open(buf, proxy, options); end
 end
 
 class URI::LDAP
@@ -29693,10 +29778,6 @@ class URI::MailTo
   def initialize(*arg); end
 end
 
-URI::Parser = URI::RFC2396_Parser
-
-URI::REGEXP = URI::RFC2396_REGEXP
-
 class URI::RFC2396_Parser
   def initialize(opts=T.unsafe(nil)); end
 end
@@ -29717,7 +29798,6 @@ module URI::Util
 end
 
 module URI
-  extend ::URI::Escape
   def self.get_encoding(label); end
 end
 

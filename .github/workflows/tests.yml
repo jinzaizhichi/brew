@@ -1,12 +1,19 @@
 name: CI
+
 on:
   push:
     branches:
       - master
   pull_request:
+
 env:
   HOMEBREW_DEVELOPER: 1
   HOMEBREW_NO_AUTO_UPDATE: 1
+
+concurrency:
+  group: "${{ github.ref }}"
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   syntax:
     if: github.repository == 'Homebrew/brew'
@@ -24,7 +31,7 @@ jobs:
           restore-keys: ${{ runner.os }}-rubygems-
 
       - name: Install Bundler RubyGems
-        run: brew install-bundler-gems
+        run: brew install-bundler-gems --groups=sorbet
 
       - name: Install shellcheck
         run: brew install shellcheck
@@ -40,6 +47,7 @@ jobs:
 
   tap-syntax:
     name: tap syntax (Linux)
+    needs: syntax
     if: startsWith(github.repository, 'Homebrew/')
     runs-on: ubuntu-latest
     steps:
@@ -59,7 +67,7 @@ jobs:
           restore-keys: ${{ runner.os }}-rubygems-
 
       - name: Install Bundler RubyGems
-        run: brew install-bundler-gems
+        run: brew install-bundler-gems --groups=sorbet
 
       - run: brew doctor
 
@@ -77,7 +85,7 @@ jobs:
         run: brew style --display-cop-names homebrew/core
 
       - name: Run brew audit --skip-style on all taps
-        run: brew audit --skip-style --display-failures-only
+        run: brew audit --skip-style --except=version --display-failures-only
 
       - name: Set up all Homebrew taps
         run: |
@@ -88,6 +96,7 @@ jobs:
           git -C "$HOMEBREW_CORE_REPOSITORY" checkout --force -B master homebrew_core/master
 
           brew tap homebrew/aliases
+          brew tap homebrew/autoupdate
           brew tap homebrew/bundle
           brew tap homebrew/cask
           brew tap homebrew/cask-drivers
@@ -110,7 +119,7 @@ jobs:
           HOMEBREW_SIMULATE_MACOS_ON_LINUX: 1
 
       - name: Run brew audit --skip-style on homebrew-core
-        run: brew audit --skip-style --tap=homebrew/core
+        run: brew audit --skip-style --except=version --tap=homebrew/core
         env:
           HOMEBREW_SIMULATE_MACOS_ON_LINUX: 1
 
@@ -121,6 +130,7 @@ jobs:
                                          homebrew/test-bot
 
           brew style --display-cop-names homebrew/aliases\
+                                         homebrew/autoupdate\
                                          homebrew/command-not-found \
                                          homebrew/formula-analytics \
                                          homebrew/linux-dev \
@@ -149,12 +159,13 @@ jobs:
       # Can't cache this because we need to check that it doesn't fail the
       # "uncommitted RubyGems" step with a cold cache.
       - name: Install Bundler RubyGems
-        run: brew install-bundler-gems
+        run: brew install-bundler-gems --groups=sorbet
 
       - name: Check for uncommitted RubyGems
         run: git diff --stat --exit-code Library/Homebrew/vendor/bundle/ruby
 
   docker:
+    needs: syntax
     runs-on: ubuntu-latest
     steps:
       - name: Set up Homebrew
@@ -178,6 +189,7 @@ jobs:
 
   tests:
     name: ${{ matrix.name }}
+    needs: syntax
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -201,7 +213,7 @@ jobs:
           restore-keys: ${{ runner.os }}-rubygems-
 
       - name: Install Bundler RubyGems
-        run: brew install-bundler-gems
+        run: brew install-bundler-gems --groups=sorbet
 
       - name: Create parallel test log directory
         run: mkdir tests
@@ -222,7 +234,7 @@ jobs:
         env:
           HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - uses: codecov/codecov-action@967e2b38a85a62bd61be5529ada27ebc109948c2
+      - uses: codecov/codecov-action@29386c70ef20e286228c72b668a06fd0e8399192
 
   test-default-formula-linux:
     name: test default formula (Linux)
@@ -260,7 +272,7 @@ jobs:
       # Can't cache this because we need to check that it doesn't fail the
       # "uncommitted RubyGems" step with a cold cache.
       - name: Install Bundler RubyGems
-        run: brew install-bundler-gems
+        run: brew install-bundler-gems --groups=sorbet
 
       - name: Check for uncommitted RubyGems
         run: git diff --stat --exit-code Library/Homebrew/vendor/bundle/ruby
@@ -306,12 +318,25 @@ jobs:
           restore-keys: ${{ runner.os }}-parallel_runtime_rspec-
 
       - name: Run brew tests
-        run: brew tests --online --coverage
+        run: |
+          # Retry multiple times when using BuildPulse to detect and submit
+          # flakiness (because rspec-retry is disabled).
+          if [ -n "$HOMEBREW_BUILDPULSE_ACCESS_KEY_ID" ]; then
+            brew tests --online --coverage || \
+            brew tests --online --coverage || \
+            brew tests --online --coverage
+          else
+            brew tests --online --coverage
+          fi
         env:
           HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # These cannot be queried at the macOS level on GitHub Actions.
           HOMEBREW_LANGUAGES: en-GB
+          HOMEBREW_BUILDPULSE_ACCESS_KEY_ID: ${{ secrets.BUILDPULSE_ACCESS_KEY_ID }}
+          HOMEBREW_BUILDPULSE_SECRET_ACCESS_KEY: ${{ secrets.BUILDPULSE_SECRET_ACCESS_KEY }}
+          HOMEBREW_BUILDPULSE_ACCOUNT_ID: 1503512
+          HOMEBREW_BUILDPULSE_REPOSITORY_ID: 53238813
 
       - run: brew test-bot --only-formulae --test-default-formula
 
-      - uses: codecov/codecov-action@967e2b38a85a62bd61be5529ada27ebc109948c2
+      - uses: codecov/codecov-action@29386c70ef20e286228c72b668a06fd0e8399192

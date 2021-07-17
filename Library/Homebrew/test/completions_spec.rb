@@ -27,11 +27,16 @@ describe Homebrew::Completions do
 
   context "when linking or unlinking completions" do
     def setup_completions(external:)
-      (internal_path/"completions/bash/foo_internal").write "#foo completions"
+      internal_bash_completion = internal_path/"completions/bash"
+      external_bash_completion = external_path/"completions/bash"
+
+      internal_bash_completion.mkpath
+      (internal_bash_completion/"foo_internal").write "#foo completions"
       if external
-        (external_path/"completions/bash/foo_external").write "#foo completions"
-      elsif (external_path/"completions/bash/foo_external").exist?
-        (external_path/"completions/bash/foo_external").delete
+        external_bash_completion.mkpath
+        (external_bash_completion/"foo_external").write "#foo completions"
+      elsif (external_bash_completion/"foo_external").exist?
+        (external_bash_completion/"foo_external").delete
       end
     end
 
@@ -245,7 +250,7 @@ describe Homebrew::Completions do
         expect(completion).to eq <<~COMPLETION
           _brew_missing() {
             local cur="${COMP_WORDS[COMP_CWORD]}"
-            case "$cur" in
+            case "${cur}" in
               -*)
                 __brewcomp "
                 --debug
@@ -256,6 +261,7 @@ describe Homebrew::Completions do
                 "
                 return
                 ;;
+              *)
             esac
             __brew_complete_formulae
           }
@@ -267,7 +273,7 @@ describe Homebrew::Completions do
         expect(completion).to eq <<~COMPLETION
           _brew_update() {
             local cur="${COMP_WORDS[COMP_CWORD]}"
-            case "$cur" in
+            case "${cur}" in
               -*)
                 __brewcomp "
                 --debug
@@ -279,6 +285,7 @@ describe Homebrew::Completions do
                 "
                 return
                 ;;
+              *)
             esac
           }
         COMPLETION
@@ -403,10 +410,13 @@ describe Homebrew::Completions do
 
       it "returns appropriate completion for a command with multiple named arg types" do
         completion = described_class.generate_fish_subcommand_completion("upgrade")
+        expected_line_start = "__fish_brew_complete_arg 'upgrade; and not __fish_seen_argument"
         expect(completion).to match(
-          /__fish_brew_complete_arg 'upgrade' -a '\(__fish_brew_suggest_formulae_outdated\)'/,
+          /#{expected_line_start} -l cask -l casks' -a '\(__fish_brew_suggest_formulae_outdated\)'/,
         )
-        expect(completion).to match(/__fish_brew_complete_arg 'upgrade' -a '\(__fish_brew_suggest_casks_outdated\)'/)
+        expect(completion).to match(
+          /#{expected_line_start} -l formula -l formulae' -a '\(__fish_brew_suggest_casks_outdated\)'/,
+        )
       end
     end
 

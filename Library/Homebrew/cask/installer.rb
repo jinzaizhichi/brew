@@ -56,6 +56,8 @@ module Cask
       caveats = cask.caveats
       return if caveats.empty?
 
+      Homebrew.messages.record_caveats(cask.token, caveats)
+
       <<~EOS
         #{ohai_title "Caveats"}
         #{caveats}
@@ -167,7 +169,7 @@ module Cask
     sig { params(quiet: T.nilable(T::Boolean), timeout: T.nilable(T.any(Integer, Float))).returns(Pathname) }
     def download(quiet: nil, timeout: nil)
       @download ||= downloader.fetch(quiet: quiet, verify_download_integrity: @verify_download_integrity,
-timeout: timeout)
+                                     timeout: timeout)
     end
 
     def verify_has_sha
@@ -536,7 +538,7 @@ timeout: timeout)
 
         @cask.metadata_versioned_path.rmdir_if_possible
       end
-      @cask.metadata_master_container_path.rmdir_if_possible unless upgrade?
+      @cask.metadata_main_container_path.rmdir_if_possible unless upgrade?
 
       # toplevel staged distribution
       @cask.caskroom_path.rmdir_if_possible unless upgrade?

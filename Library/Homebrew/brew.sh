@@ -51,9 +51,9 @@ HOMEBREW_CACHE="${HOMEBREW_CACHE:-${HOMEBREW_DEFAULT_CACHE}}"
 HOMEBREW_LOGS="${HOMEBREW_LOGS:-${HOMEBREW_DEFAULT_LOGS}}"
 HOMEBREW_TEMP="${HOMEBREW_TEMP:-${HOMEBREW_DEFAULT_TEMP}}"
 
-# These referenced variables are set by bin/brew
 # Don't need to handle a default case.
-# shellcheck disable=SC2154,SC2249
+# HOMEBREW_LIBRARY set by bin/brew
+# shellcheck disable=SC2249,SC2154
 case "$*" in
   --cellar)            echo "${HOMEBREW_CELLAR}"; exit 0 ;;
   --repository|--repo) echo "${HOMEBREW_REPOSITORY}"; exit 0 ;;
@@ -315,6 +315,9 @@ then
 fi
 
 HOMEBREW_CORE_REPOSITORY="${HOMEBREW_LIBRARY}/Taps/homebrew/homebrew-core"
+# Used in --version.sh
+# shellcheck disable=SC2034
+HOMEBREW_CASK_REPOSITORY="${HOMEBREW_LIBRARY}/Taps/homebrew/homebrew-cask"
 
 case "$*" in
   --version|-v) source "${HOMEBREW_LIBRARY}/Homebrew/cmd/--version.sh"; homebrew-version; exit 0 ;;
@@ -580,13 +583,10 @@ then
 
   # Don't allow non-developers to customise Ruby warnings.
   unset HOMEBREW_RUBY_WARNINGS
-
-  # Disable Ruby options we don't need.
-  RUBY_DISABLE_OPTIONS="--disable=did_you_mean,rubyopt"
-else
-  # Don't disable did_you_mean for developers as it's useful.
-  RUBY_DISABLE_OPTIONS="--disable=rubyopt"
 fi
+
+# Disable Ruby options we don't need.
+RUBY_DISABLE_OPTIONS="--disable=rubyopt"
 
 if [[ -z "${HOMEBREW_RUBY_WARNINGS}" ]]
 then

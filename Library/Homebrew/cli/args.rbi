@@ -97,6 +97,15 @@ module Homebrew
       def upload?; end
 
       sig { returns(T::Boolean) }
+      def linux?; end
+
+      sig { returns(T::Boolean) }
+      def linux_self_hosted?; end
+
+      sig { returns(T::Boolean) }
+      def linux_wheezy?; end
+
+      sig { returns(T::Boolean) }
       def total?; end
 
       sig { returns(T::Boolean) }
@@ -104,6 +113,12 @@ module Homebrew
 
       sig { returns(T::Boolean) }
       def installed?; end
+
+      sig { returns(T::Boolean) }
+      def installed_on_request?; end
+
+      sig { returns(T::Boolean) }
+      def installed_as_dependency?; end
 
       sig { returns(T::Boolean) }
       def all?; end
@@ -183,11 +198,6 @@ module Homebrew
       sig { returns(T.nilable(String)) }
       def workflow; end
 
-      sig { returns(T.nilable(String)) }
-      def bintray_org; end
-
-      sig { returns(T.nilable(String)) }
-      def bintray_repo; end
       sig { returns(T.nilable(String)) }
       def package_name; end
 
@@ -274,6 +284,9 @@ module Homebrew
 
       sig { returns(T.nilable(String)) }
       def screen_saverdir; end
+
+      sig { returns(T.nilable(T::Array[String])) }
+      def groups; end
     end
   end
 end
