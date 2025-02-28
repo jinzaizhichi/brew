@@ -1368,6 +1368,9 @@ Create a basic template for a Ruby build\.
 \fB\-\-rust\fP
 Create a basic template for a Rust build\.
 .TP
+\fB\-\-zig\fP
+Create a basic template for a Zig build\.
+.TP
 \fB\-\-no\-fetch\fP
 Homebrew will not download \fIURL\fP to the cache and will thus not add its SHA\-256 to the formula for you, nor will it check the GitHub API for GitHub projects (to fill out its description and homepage)\.
 .TP
@@ -2804,6 +2807,9 @@ If set, always use the latest stable tag (even if developer commands have been r
 .TP
 \fBHOMEBREW_UPGRADE_GREEDY\fP
 If set, pass \fB\-\-greedy\fP to all cask upgrade commands\.
+.TP
+\fBHOMEBREW_UPGRADE_GREEDY_CASKS\fP
+A space\-separated list of casks\. Homebrew will act as if \fB\-\-greedy\fP was passed when upgrading any cask on this list\.
 .TP
 \fBHOMEBREW_VERBOSE\fP
 If set, always assume \fB\-\-verbose\fP when running commands\.

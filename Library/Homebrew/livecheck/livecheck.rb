@@ -28,19 +28,17 @@ module Homebrew
     ].freeze, T::Array[String])
     private_constant :UNSTABLE_VERSION_KEYWORDS
 
-    sig { returns(T::Hash[T::Class[T.anything], String]) }
-    private_class_method def self.livecheck_strategy_names
-      return T.must(@livecheck_strategy_names) if defined?(@livecheck_strategy_names)
+    sig { params(strategy_class: T::Class[Strategic]).returns(String) }
+    private_class_method def self.livecheck_strategy_names(strategy_class)
+      @livecheck_strategy_names ||= T.let({}, T.nilable(T::Hash[T::Class[Strategic], String]))
+      @livecheck_strategy_names[strategy_class] ||= Utils.demodulize(strategy_class.name)
+    end
 
-      # Cache demodulized strategy names, to avoid repeating this work
-      @livecheck_strategy_names = T.let({}, T.nilable(T::Hash[T::Class[T.anything], String]))
-      Strategy.constants.sort.each do |const_symbol|
-        constant = Strategy.const_get(const_symbol)
-        next unless constant.is_a?(Class)
-
-        T.must(@livecheck_strategy_names)[constant] = Utils.demodulize(T.must(constant.name))
-      end
-      T.must(@livecheck_strategy_names).freeze
+    sig { params(strategy_class: T::Class[Strategic]).returns(T::Array[Symbol]) }
+    private_class_method def self.livecheck_find_versions_parameters(strategy_class)
+      @livecheck_find_versions_parameters ||= T.let({}, T.nilable(T::Hash[T::Class[Strategic], T::Array[Symbol]]))
+      @livecheck_find_versions_parameters[strategy_class] ||=
+        T::Utils.signature_for_method(strategy_class.method(:find_versions)).parameters.map(&:second)
     end
 
     # Uses `formulae_and_casks_to_check` to identify taps in use other than
@@ -622,8 +620,9 @@ module Homebrew
       livecheck = formula_or_cask.livecheck
       referenced_livecheck = referenced_formula_or_cask&.livecheck
 
+      livecheck_options = livecheck.options || referenced_livecheck&.options
+      livecheck_url_options = livecheck_options.url_options.compact
       livecheck_url = livecheck.url || referenced_livecheck&.url
-      livecheck_url_options = livecheck.url_options || referenced_livecheck&.url_options
       livecheck_regex = livecheck.regex || referenced_livecheck&.regex
       livecheck_strategy = livecheck.strategy || referenced_livecheck&.strategy
       livecheck_strategy_block = livecheck.strategy_block || referenced_livecheck&.strategy_block
@@ -668,7 +667,9 @@ module Homebrew
           block_provided:     livecheck_strategy_block.present?,
         )
         strategy = Strategy.from_symbol(livecheck_strategy) || strategies.first
-        strategy_name = livecheck_strategy_names[strategy]
+        next unless strategy
+
+        strategy_name = livecheck_strategy_names(strategy)
 
         if strategy.respond_to?(:preprocess_url)
           url = strategy.preprocess_url(url)
@@ -683,10 +684,10 @@ module Homebrew
           elsif original_url.present? && original_url != "None"
             puts "URL:              #{original_url}"
           end
-          puts "URL Options:      #{livecheck_url_options}" if livecheck_url_options.present?
           puts "URL (processed):  #{url}" if url != original_url
+          puts "URL Options:      #{livecheck_url_options}" if livecheck_url_options.present?
           if strategies.present? && verbose
-            puts "Strategies:       #{strategies.map { |s| livecheck_strategy_names[s] }.join(", ")}"
+            puts "Strategies:       #{strategies.map { |s| livecheck_strategy_names(s) }.join(", ")}"
           end
           puts "Strategy:         #{strategy_name}" if strategy.present?
           puts "Regex:            #{livecheck_regex.inspect}" if livecheck_regex.present?
@@ -704,23 +705,25 @@ module Homebrew
 
         next if strategy.blank?
 
-        homebrew_curl = case strategy_name
-        when "PageMatch", "HeaderMatch"
-          use_homebrew_curl?(referenced_package, url)
+        if (livecheck_homebrew_curl = livecheck_options.homebrew_curl).nil?
+          case strategy_name
+          when "PageMatch", "HeaderMatch"
+            if (homebrew_curl = use_homebrew_curl?(referenced_package, url))
+              livecheck_options = livecheck_options.merge({ homebrew_curl: })
+              livecheck_homebrew_curl = homebrew_curl
+            end
+          end
         end
-        puts "Homebrew curl?:   Yes" if debug && homebrew_curl.present?
+        puts "Homebrew curl?:   #{livecheck_homebrew_curl ? "Yes" : "No"}" if debug && !livecheck_homebrew_curl.nil?
 
-        strategy_args = {
-          regex:         livecheck_regex,
-          url_options:   livecheck_url_options,
-          homebrew_curl:,
-        }
-        # TODO: Set `cask`/`url` args based on the presence of the keyword arg
-        # in the strategy's `#find_versions` method once we figure out why
-        # `strategy.method(:find_versions).parameters` isn't working as
-        # expected.
-        strategy_args[:cask] = cask if strategy_name == "ExtractPlist" && cask.present?
-        strategy_args[:url] = url
+        # Only use arguments that the strategy's `#find_versions` method
+        # supports
+        find_versions_parameters = livecheck_find_versions_parameters(strategy)
+        strategy_args = {}
+        strategy_args[:cask] = cask if find_versions_parameters.include?(:cask)
+        strategy_args[:url] = url if find_versions_parameters.include?(:url)
+        strategy_args[:regex] = livecheck_regex if find_versions_parameters.include?(:regex)
+        strategy_args[:options] = livecheck_options if find_versions_parameters.include?(:options)
         strategy_args.compact!
 
         strategy_data = strategy.find_versions(**strategy_args, &livecheck_strategy_block)
@@ -820,10 +823,9 @@ module Homebrew
             end
             version_info[:meta][:url][:final] = strategy_data[:final_url] if strategy_data[:final_url]
             version_info[:meta][:url][:options] = livecheck_url_options if livecheck_url_options.present?
-            version_info[:meta][:url][:homebrew_curl] = homebrew_curl if homebrew_curl.present?
           end
           version_info[:meta][:strategy] = strategy_name if strategy.present?
-          version_info[:meta][:strategies] = strategies.map { |s| livecheck_strategy_names[s] } if strategies.present?
+          version_info[:meta][:strategies] = strategies.map { |s| livecheck_strategy_names(s) } if strategies.present?
           version_info[:meta][:regex] = regex.inspect if regex.present?
           version_info[:meta][:cached] = true if strategy_data[:cached] == true
           version_info[:meta][:throttle] = livecheck_throttle if livecheck_throttle
@@ -867,9 +869,10 @@ module Homebrew
       resource_version_info = {}
 
       livecheck = resource.livecheck
+      livecheck_options = livecheck.options
+      livecheck_url_options = livecheck_options.url_options.compact
       livecheck_reference = livecheck.formula
       livecheck_url = livecheck.url
-      livecheck_url_options = livecheck.url_options
       livecheck_regex = livecheck.regex
       livecheck_strategy = livecheck.strategy
       livecheck_strategy_block = livecheck.strategy_block
@@ -892,7 +895,9 @@ module Homebrew
           block_provided:     livecheck_strategy_block.present?,
         )
         strategy = Strategy.from_symbol(livecheck_strategy) || strategies.first
-        strategy_name = livecheck_strategy_names[strategy]
+        next unless strategy
+
+        strategy_name = livecheck_strategy_names(strategy)
 
         if strategy.respond_to?(:preprocess_url)
           url = strategy.preprocess_url(url)
@@ -907,10 +912,10 @@ module Homebrew
           elsif original_url.present? && original_url != "None"
             puts "URL:              #{original_url}"
           end
-          puts "URL Options:      #{livecheck_url_options}" if livecheck_url_options.present?
           puts "URL (processed):  #{url}" if url != original_url
+          puts "URL Options:      #{livecheck_url_options}" if livecheck_url_options.present?
           if strategies.present? && verbose
-            puts "Strategies:       #{strategies.map { |s| livecheck_strategy_names[s] }.join(", ")}"
+            puts "Strategies:       #{strategies.map { |s| livecheck_strategy_names(s) }.join(", ")}"
           end
           puts "Strategy:         #{strategy_name}" if strategy.present?
           puts "Regex:            #{livecheck_regex.inspect}" if livecheck_regex.present?
@@ -931,16 +936,22 @@ module Homebrew
         puts if debug && strategy.blank? && livecheck_reference != :parent
         next if strategy.blank? && livecheck_reference != :parent
 
+        if debug && !(livecheck_homebrew_curl = livecheck_options.homebrew_curl).nil?
+          puts "Homebrew curl?:   #{livecheck_homebrew_curl ? "Yes" : "No"}"
+        end
+
         if livecheck_reference == :parent
           match_version_map = { formula_latest => Version.new(formula_latest) }
           cached = true
         else
-          strategy_args = {
-            url:,
-            regex:         livecheck_regex,
-            url_options:   livecheck_url_options,
-            homebrew_curl: false,
-          }.compact
+          # Only use arguments that the strategy's `#find_versions` method
+          # supports
+          find_versions_parameters = livecheck_find_versions_parameters(strategy)
+          strategy_args = {}
+          strategy_args[:url] = url if find_versions_parameters.include?(:url)
+          strategy_args[:regex] = livecheck_regex if find_versions_parameters.include?(:regex)
+          strategy_args[:options] = livecheck_options if find_versions_parameters.include?(:options)
+          strategy_args.compact!
 
           strategy_data = strategy.find_versions(**strategy_args, &livecheck_strategy_block)
           match_version_map = strategy_data[:matches]
@@ -1032,7 +1043,7 @@ module Homebrew
         end
         resource_version_info[:meta][:strategy] = strategy_name if strategy.present?
         if strategies.present?
-          resource_version_info[:meta][:strategies] = strategies.map { |s| livecheck_strategy_names[s] }
+          resource_version_info[:meta][:strategies] = strategies.map { |s| livecheck_strategy_names(s) }
         end
         resource_version_info[:meta][:regex] = regex.inspect if regex.present?
         resource_version_info[:meta][:cached] = true if cached == true

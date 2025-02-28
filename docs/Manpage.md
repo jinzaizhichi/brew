@@ -2154,6 +2154,10 @@ see: <https://rubydoc.brew.sh/Formula>
 
 : Create a basic template for a Rust build.
 
+`--zig`
+
+: Create a basic template for a Zig build.
+
 `--no-fetch`
 
 : Homebrew will not download *`URL`* to the cache and will thus not add its
@@ -4278,6 +4282,11 @@ command execution e.g. `$(cat file)`.
 `HOMEBREW_UPGRADE_GREEDY`
 
 : If set, pass `--greedy` to all cask upgrade commands.
+
+`HOMEBREW_UPGRADE_GREEDY_CASKS`
+
+: A space-separated list of casks. Homebrew will act as if `--greedy` was passed
+  when upgrading any cask on this list.
 
 `HOMEBREW_VERBOSE`
 
